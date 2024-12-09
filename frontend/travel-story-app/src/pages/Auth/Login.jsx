@@ -1,4 +1,4 @@
-import {  useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import PasswordInput from "../../components/input/PasswordInput";
 import { useState } from "react";
 import { validateEmail } from "../../utils/helper";
@@ -10,41 +10,43 @@ const Login = () => {
   const [error, setError] = useState(null);
 
   const navigate = useNavigate();
+  
   const handleLogin = async (e) => {
     e.preventDefault();
-    if(!validateEmail(email)){
+
+    if (!validateEmail(email)) {
       setError("Please enter a validate email adress .");
       return;
     }
-    if(!password){
+    if (!password) {
       setError("Please enter the password  .");
       return;
     }
     setError("");
-    //Login API call 
-    try{
-      const response = await axiosInstance.post("/login",{
-        email:email,
-        password:password
+    //Login API call
+    try {
+      const response = await axiosInstance.post("/login", {
+        email: email,
+        password: password,
       });
 
-      //handle successfull login response 
-      if(response.data && response.data.accessToken)
-      {
-        localStorage.setItem("token",response.data.accessToken);
-        navigate("/dashboard")
+      //handle successfull login response
+      if (response.data && response.data.accessToken) {
+        localStorage.setItem("token", response.data.accessToken);
+        navigate("/dashboard");
       }
-    }catch(error){
-      //handle login error 
-      if(error.response &&
-         error.response.data &&
-          error.response.data.message
-        ){
-          setError(error.response.data.message);
-
-        }else{
-          setError("an unexpected error ")
-        }
+    } catch (error) {
+      //handle login error
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setError(error.response.data.message);
+      } 
+      else {
+        setError("an unexpected error ");
+      }
     }
   };
 
@@ -78,12 +80,14 @@ const Login = () => {
                 setEmail(target.value);
               }}
             />
-            <PasswordInput value={password}
+            <PasswordInput
+              value={password}
               onChange={({ target }) => {
                 setPassword(target.value);
-              }} />
+              }}
+            />
 
-              {error && <p className="text-red-500 text-xs pb-1">{error}</p>}
+            {error && <p className="text-red-500 text-xs pb-1">{error}</p>}
             <button type="submit" className="btn-primary">
               Login
             </button>
