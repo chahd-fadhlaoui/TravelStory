@@ -1,5 +1,5 @@
 import moment from "moment";
-import React, { useEffect, useState } from "react";
+import  { useEffect, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import { MdAdd } from "react-icons/md";
 import Modal from "react-modal";
@@ -129,7 +129,7 @@ const Home = () => {
         getAllTravelStories();
       }
     } catch (error) {
-      console.log("Something went wrong.Please try again.");
+      console.log("Something went wrong.Please try again:",error);
     }
   };
 
@@ -183,7 +183,7 @@ const Home = () => {
         }
       }
     } catch (error) {
-      console.log("Something went wrong in filter.Please try again.");
+      console.log("Something went wrong in filter.Please try again:",error);
     }
   };
 

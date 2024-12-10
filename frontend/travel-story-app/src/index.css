@@ -52,7 +52,7 @@
     }
 
     .login-ui-box {
-      @apply w-80 h-[450px] rounded-full bg-primary absolute rotate-45
+      @apply w-80 h-[450px] rounded-full bg-[#D8ACA1] absolute rotate-45
     }
 
     .modal-box {

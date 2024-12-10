@@ -1,5 +1,5 @@
 import moment from "moment";
-import React, { useState } from "react";
+import { useState } from "react";
 import { MdAdd, MdClose, MdUpdate } from "react-icons/md";
 import { toast } from "react-toastify";
 import DateSelector from "../../components/input/DateSelector";
@@ -80,7 +80,7 @@ const AddEditTravelStory = ({
           : moment().valueOf(),
       };
 
-      if (typeof storyId === "object") {
+      if (storyId) {
         // upload new image
         const imgUploadRes = await uploadImage(storyImg);
         //get the img url
@@ -167,7 +167,7 @@ const AddEditTravelStory = ({
       };
       // updating story
       const response = await axiosInstance.put(
-        "/edit-story/" + storyId,
+        "/edit-story/:" + storyId,
         postData
       );
       setStoryImg(null);
