@@ -1,12 +1,18 @@
+import moment from "moment";
 import React, { useEffect, useState } from "react";
+import { DayPicker } from "react-day-picker";
 import { MdAdd } from "react-icons/md";
 import Modal from "react-modal";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import EmptyImg from "../../assets/images/placeholder.png";
+import EmptyCard from "../../components/cards/EmptyCard";
+import FilterInfoTitle from "../../components/cards/FilterInfoTitle";
 import TravelStoryCard from "../../components/cards/TravelStoryCard";
 import Navbar from "../../components/Navbar";
 import axiosInstance from "../../utils/axiosInstance";
+import { getEmptyCardMessage } from "../../utils/helper";
 import AddEditTravelStory from "./AddEditTravelStory";
 import ViewTravelStory from "./ViewTravelStory";
 const Home = () => {
@@ -14,6 +20,11 @@ const Home = () => {
 
   const [userInfo, setUserInfo] = useState(null);
   const [allStories, setAllStories] = useState([]);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setfilterType] = useState("");
+
+  const [dateRange, setdateRange] = useState({ form: null, to: null });
 
   const [openAddEditModal, setOpenAddEditModal] = useState({
     isShown: false,
@@ -63,7 +74,13 @@ const Home = () => {
   };
 
   // handle edit story click
-  const handleEdit = (data) => {};
+  const handleEdit = (data) => {
+    setOpenAddEditModal({
+      isShown: true,
+      type: "edit",
+      data: data,
+    });
+  };
 
   //handle Travel story click
   const handleViewStory = (data) => {
@@ -83,11 +100,97 @@ const Home = () => {
       );
       if (response.data && response.data.message) {
         toast.success("Story updated successfully");
-        getAllTravelStories();
+        if (filterType === "search") {
+          onSearchStory(searchQuery);
+        } else if (filterType === "date") {
+          filterStoriesByDate(dateRange);
+        } else {
+          getAllTravelStories();
+        }
       }
     } catch (error) {
       console.log("An unexpected error occurred , Please try again:", error);
     }
+  };
+
+  // Delete story
+  const deleteTravelStory = async (data) => {
+    const storyId = data._id;
+
+    try {
+      const response = await axiosInstance.delete("/delete-story/" + storyId);
+      if (response.data && !response.data.error) {
+        toast.success("Story deleted successfully");
+        setOpenViewModal((prevState) => ({
+          ...prevState,
+          isShown: false,
+        }));
+        //refresh stories
+        getAllTravelStories();
+      }
+    } catch (error) {
+      console.log("Something went wrong.Please try again.");
+    }
+  };
+
+  // handle search story
+  const onSearchStory = async (query) => {
+    try {
+      const response = await axiosInstance.get("/search", {
+        params: {
+          query,
+        },
+      });
+
+      if (response.data && response.data.stories) {
+        setfilterType("search");
+        setAllStories(response.data.stories);
+      }
+    } catch (error) {
+      console.log("Error is search;", error.message);
+      console.log("Something went wrong.Please try again.");
+    }
+  };
+
+  //clear seach
+  const handleClearSearch = () => {
+    setfilterType("");
+    getAllTravelStories();
+  };
+
+  // handle data range select
+  const handleDayClick = (day) => {
+    setdateRange(day);
+    filterStoriesByDate(day);
+  };
+
+  // handle filter story by date range
+  const filterStoriesByDate = async (day) => {
+    try {
+      const startDate = day.from ? moment(day.from).valueOf() : null;
+      const endDate = day.to ? moment(day.to).valueOf() : null;
+
+      if (startDate && endDate) {
+        const response = await axiosInstance.get("/travel-stories/filter", {
+          params: {
+            startDate,
+            endDate,
+          },
+        });
+        if (response.data && response.data.stories) {
+          setfilterType("date");
+          setAllStories(response.data.stories);
+        }
+      }
+    } catch (error) {
+      console.log("Something went wrong in filter.Please try again.");
+    }
+  };
+
+  const resetFilter = () => {
+    setdateRange({ from: null, to: null });
+    setfilterType("");
+    getAllTravelStories();
   };
 
   useEffect(() => {
@@ -99,9 +202,23 @@ const Home = () => {
 
   return (
     <>
-      <Navbar userInfo={userInfo} />
+      <Navbar
+        userInfo={userInfo}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onSearchNote={onSearchStory}
+        handleClearSearch={handleClearSearch}
+      />
 
       <div className="container mx-auto py-10">
+        <FilterInfoTitle
+          filterType={filterType}
+          filterDates={dateRange}
+          onClear={() => {
+            resetFilter();
+          }}
+        />
+
         <div className="flex gap-7">
           <div className="flex-1">
             {allStories.length > 0 ? (
@@ -123,11 +240,26 @@ const Home = () => {
                 })}
               </div>
             ) : (
-              <>Empty Card here</>
+              <EmptyCard
+                imgSrc={EmptyImg}
+                message={getEmptyCardMessage(filterType)}
+              />
             )}
           </div>
 
-          <div className="w-[320px]"></div>
+          <div className="w-[350px]">
+            <div className="bg-white border border-slate-200 shadow-lg shadow-slate-200/60 rounded-lg">
+              <div className="p-3">
+                <DayPicker
+                  captionLayout="dropdown-buttons"
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={handleDayClick}
+                  pagedNavigation
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -168,8 +300,24 @@ const Home = () => {
         className="modal-box"
       >
         <ViewTravelStory
-          type={openViewModal.type}
           storyInfo={openViewModal.data || null}
+          className="modal-box"
+          onClose={() => {
+            setOpenViewModal((prevState) => ({
+              ...prevState,
+              isShown: false,
+            }));
+          }}
+          onEditClick={() => {
+            setOpenViewModal((prevState) => ({
+              ...prevState,
+              isShown: false,
+            }));
+            handleEdit(openViewModal.data || null);
+          }}
+          onDeleteClick={() => {
+            deleteTravelStory(openViewModal.data || null);
+          }}
         />
       </Modal>
 
@@ -179,7 +327,7 @@ const Home = () => {
           setOpenAddEditModal({
             isShown: true,
             type: "add",
-            story: null,
+            data: null,
           });
         }}
       >

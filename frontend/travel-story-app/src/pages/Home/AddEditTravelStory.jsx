@@ -13,74 +13,168 @@ const AddEditTravelStory = ({
   onClose,
   getAllTravelStories,
 }) => {
-  const [title, setTitle] = useState("");
-  const [storyImg, setStoryImg] = useState(null);
-  const [story, setStory] = useState("");
-  const [visitedLocation, setVisitedLocation] = useState([]);
-  const [visitedDate, setVisitedDate] = useState(null);
+  const [title, setTitle] = useState(storyInfo?.title || "");
+  const [storyImg, setStoryImg] = useState(storyInfo?.imageUrl || "");
+  const [story, setStory] = useState(storyInfo?.story || "");
+  const [visitedLocation, setVisitedLocation] = useState(
+    storyInfo?.visitedLocation || []
+  );
+  const [visitedDate, setVisitedDate] = useState(storyInfo?.visitedDate || "");
 
   const [error, setError] = useState("");
-//add new travel story
-const addNewTravelStory = async () => {
+  //add new travel story
+  const addNewTravelStory = async () => {
     try {
-        let imageUrl = "";
-        //upload image if present
-        if(storyImg){
-            const imgUploadRes = await uploadImage(storyImg);
-            //get the img url
-            imageUrl = imgUploadRes.imageUrl || "";
-        }
-        const response = await axiosInstance.post("/add-travel-story", {
-            title,
-            story,
-            visitedLocation,
-            imageUrl: imageUrl || "",
-            visitedDate: visitedDate
-            ? moment(visitedDate).valueOf()
-            : moment().valueOf(),
-        });
-        if (response.data && response.data.story) {
-            toast.success("Story added successfully");
-            //refresh stories
-            getAllTravelStories();
-            //close modal
-            onClose();
-        }
+      let imageUrl = "";
+      //upload image if present
+      if (storyImg) {
+        const imgUploadRes = await uploadImage(storyImg);
+        //get the img url
+        imageUrl = imgUploadRes.imageUrl || "";
+      }
+      const response = await axiosInstance.post("/add-travel-story", {
+        title,
+        story,
+        visitedLocation,
+        imageUrl: imageUrl || "",
+        visitedDate: visitedDate
+          ? moment(visitedDate).valueOf()
+          : moment().valueOf(),
+      });
+      if (response.data && response.data.story) {
+        toast.success("Story added successfully");
+        //refresh stories
+        getAllTravelStories();
+        //close modal
+        onClose();
+      }
+    } catch (error) {
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setError(error.response.data.message); //set error message
+      } else {
+        //handle unexpected error
+        setError("Something went wrong.Please try again.");
+      }
+      console.log(error);
+    }
+  };
+
+  //update travel story
+  const updateTravelStory = async () => {
+    const storyId = storyInfo._id;
+
+    try {
+      let imageUrl = "";
+
+      let postData = {
+        title,
+        story,
+        visitedLocation,
+        imageUrl: storyInfo.imageUrl || "",
+        visitedDate: visitedDate
+          ? moment(visitedDate).valueOf()
+          : moment().valueOf(),
+      };
+
+      if (typeof storyId === "object") {
+        // upload new image
+        const imgUploadRes = await uploadImage(storyImg);
+        //get the img url
+        imageUrl = imgUploadRes.imageUrl || "";
+        postData = {
+          ...postData,
+          imageUrl: imageUrl,
+        };
+      }
+
+      const response = await axiosInstance.put(
+        "/edit-story/" + storyId,
+        postData
+      );
+
+      if (response.data && response.data.story) {
+        toast.success("Story Updated successfully");
+        //refresh stories
+        getAllTravelStories();
+        //close modal
+        onClose();
+      }
     } catch (error) {
         console.log(error);
+        
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setError(error.response.data.message); //set error message
+      } else {
+        //handle unexpected error
+        setError("Something went wrong.Please try again.");
+      }
     }
-}
-
-
-//update travel story
-const updateTravelStory = async () => {}
+  };
 
   const handleAddOrUpdateClick = () => {
-    console.log("Input Data:", {title, storyImg, story, visitedLocation, visitedDate});
+    console.log("Input Data:", {
+      title,
+      storyImg,
+      story,
+      visitedLocation,
+      visitedDate,
+    });
 
-    if(!title){
-        setError("Please enter a title");
-        return;
+    if (!title) {
+      setError("Please enter a title");
+      return;
     }
-    if(!story){
-        setError("Please enter the story");
-        return;
+    if (!story) {
+      setError("Please enter the story");
+      return;
     }
-    
 
     setError("");
 
-    if(type === "edit"){
-        updateTravelStory();
-    }else {
-        addNewTravelStory();
+    if (type === "edit") {
+      updateTravelStory();
+    } else {
+      addNewTravelStory();
     }
   };
 
   //delete story img and update the story
-  const handleDeleteStoryImg = async () => {};
+  const handleDeleteStoryImg = async () => {
+    // deleting the image
+    const deleteImgRes = await axiosInstance.delete("/delete-image", {
+      params: {
+        imageUrl: storyInfo.imageUrl,
+      },
+    });
+
+    if (deleteImgRes.data) {
+      const storyId = storyInfo._id;
+
+      let postData = {
+        title,
+        story,
+        visitedLocation,
+        visitedDate: moment().valueOf(),
+        imageUrl: "",
+      };
+      // updating story
+      const response = await axiosInstance.put(
+        "/edit-story/" + storyId,
+        postData
+      );
+      setStoryImg(null);
+    }
+  };
   return (
-    <div>
+    <div className="relative">
       <div className="flex items-center justify-between">
         <h5 className="text-lg font-medium text-slate-700">
           {type === "add" ? "Add Story" : "Edit Story"}
