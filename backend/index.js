@@ -114,7 +114,7 @@ app.post("/image-upload", upload.single("image"), async (req, res) => {
           .json({ error: true, message: "No images uploaded " });
       }
       const imageUrl = `http://localhost:8000/uploads/${req.file.filename}`;
-      res.status(201).json({ imageUrl });
+       res.status(201).json({ imageUrl });
     } catch (error) {
       res.status(500).json({ error: true, message: error.message });
     }
@@ -204,7 +204,7 @@ app.put("/edit-story/:id", authenticateToken, async (req, res) => {
     const {userId}=req.user;
       //validate required fields
   if (!title || !story || !visitedLocation || !imageUrl || !visitedDate) {
-    res.status(400).json({ error: true, message: "All fields are  required " });
+   return  res.status(400).json({ error: true, message: "All fields are  required " });
   }
 
   //convert visitedDate from milliseconds to Date object
@@ -223,11 +223,11 @@ app.put("/edit-story/:id", authenticateToken, async (req, res) => {
     travelStory.imageUrl=imageUrl || placeholderImgUrl;
     travelStory.visitedDate=parsedVisitedDate;
     await travelStory.save ();
-    res.status(200).json({story:travelStory,message:"Updated successfully"})
+   return res.status(200).json({story:travelStory,message:"Updated successfully"})
 
 
   }catch(error){
-    res.status(500).json({error:true,message:error.message})
+   return  res.status(500).json({error:true,message:error.message})
   }
 
 })
